@@ -4,4 +4,4 @@
 
 ## 书架
 
-* [高性能MySQL]
+* [高性能MySQL](https://github.com/pjyong/note/blob/master/high_performance_mysql)
