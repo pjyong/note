@@ -31,24 +31,84 @@
 
 #### 先创建共享锁
 ```
-/\*客户端1\*/
+/*客户端1*/
 set autocommit = 0;
 SELECT * FROM table1 where name= 'abc' lock in share mode
-/\*客户端2\*/
-SELECT * FROM table1 where name= 'abc' lock in share mode /\*不阻塞\*/
-SELECT * FROM table1 where name= 'abc' for update /\*阻塞\*/
-update table1  set address = 'hubei' where name='abc' /\*阻塞\*/
+/*客户端2*/
+SELECT * FROM table1 where name= 'abc' lock in share mode /*不阻塞*/
+SELECT * FROM table1 where name= 'abc' for update /*阻塞*/
+update table1  set address = 'hubei' where name='abc' /*阻塞*/
 ```
 
 #### 先创建排它锁
 ```
-/\*客户端1\*/
+/*客户端1*/
 set autocommit = 0;
 SELECT * FROM table1 where name= 'abc' for update
-/\*客户端2\*/
-SELECT * FROM table1 where name= 'abc' lock in share mode /\*阻塞\*/
-SELECT * FROM table1 where name= 'abc' for update /\*阻塞\*/
-update table1  set address = 'hubei' where name='abc' /\*阻塞\*/
+/*客户端2*/
+SELECT * FROM table1 where name= 'abc' lock in share mode /*阻塞*/
+SELECT * FROM table1 where name= 'abc' for update /*阻塞*/
+update table1  set address = 'hubei' where name='abc' /*阻塞*/
 ```
 
-**另外得补充一点的是，如果name有索引，只会锁行，否则就会锁表。**
+另外得补充一点的是，如果name有索引，只会锁行，否则就会锁表。
+
+### 悲观锁和乐观锁
+
+上面的两种锁都是悲观锁。一般我不建议使用，而是使用乐观锁。
+
+## 1.3-事务
+
+### 事务的ACID
+
+* 原子性(atomicity)。事务被视为最小工作单元，要么全部提交成功，要么全部失败回滚。
+* 一致性(consistency)。数据库总是从一个一致性的状态转到另一个一致性的状态。事务任何时候中断，也不会保存保存到数据库中。
+* 隔离性(isolation)。事务在没有完成之前做的任何更改，并不可见。
+* 持久性(durability)。一旦事务提交，所有更改就会永久保存到数据库中。
+
+### 隔离级别
+
+在SQL标准中定义了四种隔离级别，级别越低通常可以执行更高的并发，系统开销也越低。
+
+* 未提交读。也叫脏读。事务B读到事务A中未提交的数据变动。
+* 提交读。大多数数据库默认的隔离级别，但MySQL不是。事务B先开始，事务A后开始，事务A先完成，事务B在执行时能读取到事务A的变动。这也叫不可重复读，因为两次同样的查询，结果可能不一样。
+* 可重复读。MySQL默认隔离级别。同一个事务中多次读取同样记录结果始终一致。InnoDB利用多版本并发控制(MVCC)避免了幻读(事务A读取一个范围的记录，事务B在该范围插入了新记录导致事务A再次读取不一致)。
+* 可串行化。隔离最高级别，强制所有事务串行化执行。对所有读取的行都加锁。要确保数据一致性而且在没有并发的情况下可以考虑使用。
+
+### 死锁
+
+事务里面每一个UPDATE默认会创建一个排他锁，SELECT并不会创建任何锁。如事务A先更改数据1，再更改数据2，事务B先更改数据2，再更改数据1，当事务A和B同时完成第一步时，死锁产生了。
+
+InnoDB实现了死锁检测和死锁超时机制，将持有最少行级排他锁的事务进行回滚。在应用程序中，要考虑如何处理死锁，大多数情况只需要重新执行失败的事务即可。
+
+### 事务的日志
+
+存储引擎在修改时，只需要修改其内存拷贝，再将改动写入事务日志(磁盘IO)，而不用每次都将修改的数据本身持久化到磁盘。事务日志采用的是追加的方式，因此写日志的操作只是一小块区域的顺序IO，而不像随机IO需要在磁盘的多个地方移动磁头。事务日志持久以后，内存中被修改的数据再慢慢写入到磁盘。所以每次修改数据，需要两次写入磁盘。
+
+### MySQL中的事务
+
+* 自动提交。其实每个查询都被当做一个事务提交，可以参考上面锁的例子。
+* 在事务中千万不要混合使用存储引擎。
+* 隐式和显式锁定。InnoDB采用两阶段锁定协议(two-phase locking protocol)。在事务执行过程中，随时都可以锁定，只有在ROOLBACK或COMMIT时才会释放。InnoDB会根据隔离级别自动加锁，这是隐式锁定。显式锁定参考上面锁的例子。
+
+### 多版本并发控制(MVCC)
+
+MVCC的实现，是通过保存数据在某个时间点的快照来实现的。根据事务开始的时间不同，每个事务对同一张表，同一时刻看到的数据可能是不一样的。
+
+InnoDB的MVCC，是通过在每行记录后面保存两个隐藏的列来实现的。这两个列，一个保存行的创建时间，一个保存行的过期时间(或删除时间)。当然存储的不是实际的时间值，而是系统版本号。每开始一个事务，系统版本号都会自动递增。事务开始时刻的系统版本号会作为事务的版本号，用来和查询到的每行记录的版本号做比较。下面看看在可重复读隔离级别下，MVCC具体是如何操作的。
+
+* SELECT
+  * InnoDB会根据以下两个条件检查每行记录：
+    * a.InnoDB会查找早于或等于当前事务版本的数据行。
+    * b.行的删除版本要么未定义要么大于当前事务版本。
+    * 只有符合以上两个条件的记录，才能返回作为查询结果。
+* INSERT
+  * InnoDB为新插入的每行保存当前系统版本号作为行创建版本号。
+* DELETE
+  * InnoDB为删除的每行保存当前系统版本号作为行删除版本号。
+* UPDATE
+  * InnoDB为插入一行新纪录，保存当前系统版本号作为行创建版本号，同时保存当前系统版本号作为原来行的删除版本号。
+
+当我看到这里时，有个疑问为什么非得要两个版本号来维护一行记录？如果要我设计一个数据版本控制，我会增加两个字段delete_status和version，每次insert、update和delete都会让version自增，如果是delete就会将delete_status置为1。问题来了，我要获取某一版本前的所有记录，是不是应该这样写查询条件(delete_status=0 AND version <= 当前版本) OR (delete_status = 1 AND version >= 当前版本)？这里面是不是有问题？有，假设刚才的某一版本是1，那么很有可能版本2创建了记录，版本3删除了刚刚创建的记录，以刚才的查询条件是不是也把刚刚的记录划分到版本1去了？
+
+MVCC只在可重复读和提交读两个级别下工作。
