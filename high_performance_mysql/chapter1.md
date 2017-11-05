@@ -109,6 +109,6 @@ InnoDB的MVCC，是通过在每行记录后面保存两个隐藏的列来实现�
 * UPDATE
   * InnoDB为插入一行新纪录，保存当前系统版本号作为行创建版本号，同时保存当前系统版本号作为原来行的删除版本号。
 
-当我看到这里时，有个疑问为什么非得要两个版本号来维护一行记录？如果要我设计一个数据版本控制，我会增加两个字段delete_status和version，每次insert、update和delete都会让version自增，如果是delete就会将delete_status置为1。问题来了，我要获取某一版本前的所有记录，是不是应该这样写查询条件(delete_status=0 AND version <= 当前版本) OR (delete_status = 1 AND version >= 当前版本)？这里面是不是有问题？有，假设刚才的某一版本是1，那么很有可能版本2创建了记录，版本3删除了刚刚创建的记录，以刚才的查询条件是不是也把刚刚的记录划分到版本1去了？同样是两个字段，不得不承认没有InnoDB设计得好。
+当我看到这里时，有个疑问为什么非得要两个版本号来维护一行记录？如果要我设计一个数据版本控制，我会增加两个字段delete_status和version，每次insert、update和delete都会让version自增(总是先备份原数据)，如果是delete就会将delete_status置为1。问题来了，我要获取某一版本前的所有记录，是不是应该这样写查询条件`version <= 当前版本`？
 
 MVCC只在可重复读和提交读两个级别下工作。
