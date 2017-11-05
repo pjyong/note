@@ -5,3 +5,13 @@
 ## 书架
 
 * [高性能MySQL](https://github.com/pjyong/note/blob/master/high_performance_mysql)
+* 深入理解Linux内核
+* 构建高性能Web站点
+* 架构探险-从零开始写分布式服务框架
+* 构建高可用Linux服务器
+* Linux系统命令及Shell脚本
+* RabbitMQ实战
+* MySQL技术内幕
+* 架构真经
+* C语言入门经典
+* 现代操作系统
