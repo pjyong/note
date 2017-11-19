@@ -30,27 +30,43 @@ class Queue
 
     public function __construct()
     {
-        $this->stack1 = = new Stack();
-        $this->stack2 = = new Stack();
+        $this->stack1 = new Stack();
+        $this->stack2 = new Stack();
     }
 
     public function poll()
     {
-        $popVal = $this->stack1->pop();
-        while( $popVal !== null ){
-            $this->stack2->push( $popVal );
-            $popVal = $this->stack1->pop();
+        if( $this->stack2->isEmpty() ){
+            while( !$this->stack1->isEmpty() ){
+                $this->stack2->push( $this->stack1->pop() );
+            }
         }
         return $this->stack2->pop();
     }
 
     public function add( $val )
     {
+        // 这里必须要还原
+        if( $this->stack1->isEmpty() && !$this->stack2->isEmpty() ){
+            while( !$this->stack2->isEmpty() ){
+                $this->stack1->push( $this->stack2->pop() );
+            }
+        }
         $this->stack1->push( $val );
+        echo "$val \n";
         return $this;
     }
-
-    public function peek()
-    {
-    }
 }
+
+// test
+$q = new Queue();
+$q->add( 3 );
+$q->add( 4 );
+$q->add( 5 );
+$q->add( 6 );
+$res = $q->poll();
+echo "$res \n";
+$res = $q->poll();
+echo "$res \n";
+$q->add( 7 );
+$q->add( 8 );
