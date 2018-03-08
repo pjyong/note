@@ -9,7 +9,7 @@
 * 构建高性能Web站点
 * 架构探险-从零开始写分布式服务框架
 * 构建高可用Linux服务器
-* Linux系统命令及Shell脚本
+* [Linux系统命令及Shell脚本](shell)
 * RabbitMQ实战
 * MySQL技术内幕
 * 架构真经
