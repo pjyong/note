@@ -3,3 +3,4 @@
 ## 目录
 
 * [系统](system.md#系统)
+* [Shell](script.md#shell)

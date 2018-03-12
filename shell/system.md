@@ -49,3 +49,56 @@ su的缺点是你不得不把root密码告诉别人才能完成超级管理员�
 
 * 在单一时刻执行一次，用at
 * 周期性执行，用cron
+
+# 文件和目录管理
+
+Ubuntu根目录:
+* /bin 常见用户指令
+* /cdrom
+* /etc 系统和服务的配置文件
+* /lib 系统函数库目录
+* /lib64 64位函数库目录
+* /lib32
+* /lost+found ext3文件系统需要的目录，用于磁盘检查
+* /mnt 系统加载文件系统时常用的挂载点
+* /proc 虚拟文件系统，在内存里
+* /run
+* /snap Ubuntu的snap程序
+* /tmp 临时文件夹
+* /boot 内核和启动文件
+* /dev 设备文件
+* /home 用户根目录
+* /media 挂在光驱等临时文件系统的挂载点
+* /opt 第三方软件安装目录
+* /root
+* /sbin 系统指令
+* /srv
+* /sys
+* /usr 存放与用户相关的文件和目录
+* /var 动态数据，比如日志文件
+
+
+## 文件相关常用命令
+* dos2unix 换行符转换
+* touch 除了新建文件，还可以**更新文件的时间戳**
+* ls -al 第一列文件类型:
+ * d 目录
+ * - 普通文件
+ * l 链接文件
+ * b 块文件
+ * c 字符文件
+ * s socket文件
+ * p 管道文件
+* lsattr 查看文件隐藏属性
+* chattr 更改文件隐藏属性
+* umask 遮罩值，比如值是022，那么----w--w-，那么默认文件的权限就被遮了两位,rwxr-xr-x，即755。
+* find -mtime -n/+n
+* locate 定位文件，linux会将文件记录到数据库，使用locate比find更快。但是新创建的文件，必须updatedb之后，才能locate。
+* which/whereis 查找执行文件。whereis相比which会找出man文件
+* cpio 打包工具，不单独使用，与find结合
+* sort
+* uniq
+* tr
+* cut
+* split
+* tr
