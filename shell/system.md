@@ -102,3 +102,71 @@ Ubuntu根目录:
 * cut
 * split
 * tr
+
+### grep 正则表达式匹配行
+```
+# 匹配单个单词
+grep '\<start\>' README.md
+grep '\bstart\b' README.md
+# 匹配含有这个单词的行数
+grep -c '\bstart\b' README.md
+# 遍历查找
+grep -rn ./ -e 'start'
+# 使用\{\}
+grep "\(test\)\{2\}" ttt
+```
+
+### sed 针对流的文本行编辑工具
+默认并不会更改源文件，只打印。如果要修改源文件就必须加-i，或者重定向。
+* d 删除
+* s 查找替换
+* i或a 插入
+* r 读入
+* p 打印
+* w 写文件
+
+```
+# 匹配字符串
+sed -n '/test/p' filename
+# 打印第一行
+sed -n '1p' filename
+# sed 删除行首空格
+sed 's/^[ ]*//g' filename
+# 在行后或行前添加新行
+sed 's/pattern/&\n/g' filename
+sed 's/pattern/\n&/g' filename
+# 使用变量替换
+sed -e "s/$var1/$var2/g" filename
+# 在第一行前插入文本
+sed -i '1i\被插入的文本' filename
+# 在最后一行插入
+sed -i '$a\被插入的文本' filename
+# 在匹配的行前插入sed
+sed -i '/pattern/i被插入的文本' t2
+# 删除文本中的空行和以#注释的行
+grep -v  ^# t2 | sed '/^\s*$/d'  | sed '/^$/d'
+# 有时候我们会写sed脚本，比如sed.rule:
+s/bbbb/haha/
+$a\xxxx
+# 然后执行这个脚本
+sed -f sed.rule filename
+# 将test行下面的的bbbb替换成haha
+sed '/test/{n;s/bbbb/haha/g}' ttt
+sed -n '/pattern/p' file_name |sed -n 7,12p
+sed -n '/pattern/{7,12p}' file_name
+```
+
+### awk 基于列的文本处理工具
+awk认为文件都是结构化的，即由单词和空白字符(空格，tab等)组成。每个非空白的地方叫“域”，其中$0表示全部域，$1是第一个域...
+```
+# 指定分隔符
+netstat -tlnp | awk -F: '{print $1}'
+# 计算分隔的列数
+netstat -tlnp | awk -F: '{print NF}'
+# 打印每行倒数第二列
+netstat -tlnp | awk '{print $(NF-1)}'
+# 截取字符串，第一列第四个字符串到结束
+netstat -tlnp | awk '{print substr($1, 4)}'
+# 计算所有进程ID之和
+ps -aux | grep mysql-workbench-bin | awk 'BEGIN{total=0}{total+=$2}END{print total}'
+```
