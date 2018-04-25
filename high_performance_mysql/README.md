@@ -22,3 +22,6 @@
 * 6-查询性能优化
 * [7-MySQL高级特性](chapter7.md#mysql高级特性)
   * [7.1-分区表](chapter7.md#分区表)
+* [10-复制](chapter10.md#复制)
+    * [10.1-复制概述](chapter10.md#复制概述)
+    * [10.1-配置复制](chapter10.md#配置复制)
